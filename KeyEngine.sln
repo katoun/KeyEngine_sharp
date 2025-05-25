@@ -4,9 +4,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 17.14.36121.58
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KeyEditor", "Source\KeyEditor\KeyEditor.csproj", "{4AC4F025-CDA0-4954-815B-E7114B0001C2}"
-	ProjectSection(ProjectDependencies) = postProject
-		{ACD9C688-69B4-48BC-81D4-800918128E48} = {ACD9C688-69B4-48BC-81D4-800918128E48}
-	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KeyEngine", "Source\KeyEngine\KeyEngine.csproj", "{ACD9C688-69B4-48BC-81D4-800918128E48}"
 EndProject
