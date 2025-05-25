@@ -8,6 +8,7 @@
 		<Version>0.0.1</Version>
 		<Company>KeyEngine</Company>
 		<ApplicationIcon>Resources\Icon.ico</ApplicationIcon>
+		<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
 	</PropertyGroup>
 	
 	<PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
