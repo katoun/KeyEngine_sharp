@@ -5,12 +5,11 @@
 		<TargetFramework>net9.0</TargetFramework>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
+		<BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+		<AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
 		<Version>0.0.1</Version>
 		<Company>KeyEngine</Company>
-	</PropertyGroup>
-	
-	<PropertyGroup Condition="'$(Configuration)' == 'Release' and '$(DisableAOT)' != 'true'">
-		<PublishAot>true</PublishAot>
+		<ApplicationIcon>Resources\avalonia-logo.ico</ApplicationIcon>
 	</PropertyGroup>
 
 	<PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
@@ -20,6 +19,10 @@
 	<PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
 		<OutputPath>..\..\bin\Release\</OutputPath>
 	</PropertyGroup>
+
+	<ItemGroup>
+	  <Content Include="Resources\avalonia-logo.ico" />
+	</ItemGroup>
 
 	<ItemGroup>
 		<ProjectReference Include="..\KeyEngine\KeyEngine.csproj" />
@@ -35,11 +38,11 @@
 	<PackageReference Include="Avalonia.Fonts.Inter" Version="11.3.0" />
 	<PackageReference Include="Avalonia.MarkupExtension" Version="11.3.0.1" />
 	<PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.0" />
-	<PackageReference Include="Dock.Avalonia" Version="11.3.0.1" />
-	<PackageReference Include="Dock.Model" Version="11.3.0.1" />
-	<PackageReference Include="Dock.Model.Mvvm" Version="11.3.0.1" />
-	<PackageReference Include="Dock.Serializer" Version="11.3.0.1" />
-	<PackageReference Include="Dock.Settings" Version="11.3.0.1" />
+	<PackageReference Include="Dock.Avalonia" Version="11.3.0.2" />
+	<PackageReference Include="Dock.Model" Version="11.3.0.2" />
+	<PackageReference Include="Dock.Model.Mvvm" Version="11.3.0.2" />
+	<PackageReference Include="Dock.Serializer" Version="11.3.0.2" />
+	<PackageReference Include="Dock.Settings" Version="11.3.0.2" />
 	<PackageReference Include="StaticViewLocator" Version="0.0.1">
 		<PrivateAssets>all</PrivateAssets>
 		<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

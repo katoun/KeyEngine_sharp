@@ -1,12 +1,15 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
+		<OutputType>WinExe</OutputType>
 		<TargetFramework>net9.0</TargetFramework>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<Version>0.0.1</Version>
+		<Company>KeyEngine</Company>
+		<ApplicationIcon>Resources\Icon.ico</ApplicationIcon>
 	</PropertyGroup>
-
+	
 	<PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
 		<OutputPath>..\..\bin\Debug\</OutputPath>
 	</PropertyGroup>
@@ -16,7 +19,17 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <PackageReference Include="Friflo.Engine.ECS" Version="3.4.2" />
+	  <Content Include="Resources\Icon.ico" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <PackageReference Include="Silk.NET.Input" Version="2.22.0" />
+	  <PackageReference Include="Silk.NET.OpenGL" Version="2.22.0" />
+	  <PackageReference Include="Silk.NET.Windowing" Version="2.22.0" />
+	</ItemGroup>
+	
+	<ItemGroup>
+		<ProjectReference Include="..\KeyEngine\KeyEngine.csproj" />
 	</ItemGroup>
 
 </Project>

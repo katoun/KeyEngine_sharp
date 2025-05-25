@@ -31,10 +31,10 @@ public static class MathUtils
 
     public static void Transformation(ref readonly Vector3 scaling, ref readonly Quaternion rotation, ref readonly Vector3 translation, out Matrix4x4 result)
     {
-        var S = Matrix4x4.CreateScale(scaling);
-        var R = Matrix4x4.CreateFromQuaternion(rotation);
-        var T = Matrix4x4.CreateTranslation(translation);
+        var scaleMatrix = Matrix4x4.CreateScale(scaling);
+        var rotationMatrix = Matrix4x4.CreateFromQuaternion(rotation);
+        var translateMatrix = Matrix4x4.CreateTranslation(translation);
 
-        result = S * R * T;
+        result = scaleMatrix * rotationMatrix * translateMatrix;
     }
 }
