@@ -4,6 +4,7 @@ using Silk.NET.Input;
 using Silk.NET.Maths;
 using Silk.NET.OpenGL;
 using Silk.NET.Windowing;
+using StbImageSharp;
 
 namespace KeyEngine.Player.Desktop;
 
@@ -17,24 +18,8 @@ internal class Program
     private static uint m_ElementBufferObject;
     
     private static uint m_Program;
-
-    //Vertex data, uploaded to the VBO.
-    private static readonly float[] Vertices =
-    [
-        //X    Y      Z
-        0.5f,  0.5f, 0.0f,
-        0.5f, -0.5f, 0.0f,
-        -0.5f, -0.5f, 0.0f,
-        -0.5f,  0.5f, 0.5f
-    ];
-
-    //Index data, uploaded to the EBO.
-    private static readonly uint[] Indices =
-    [
-        0u, 1u, 3u,
-        1u, 2u, 3u
-    ];
-
+    private static uint m_Texture;
+    
     public static void Main(string[] args)
     {
         var options = WindowOptions.Default;
@@ -68,24 +53,39 @@ internal class Program
         m_Gl.ClearColor(Color.CornflowerBlue);
 
         //Creating a vertex array.
+        float[] vertices =
+        [
+            //       aPosition | aTexCoords
+            //X    Y      Z    | U, V
+            0.5f,  0.5f, 0.0f,  1.0f, 1.0f,
+            0.5f, -0.5f, 0.0f,  1.0f, 0.0f,
+            -0.5f, -0.5f, 0.0f,  0.0f, 0.0f,
+            -0.5f,  0.5f, 0.0f,  0.0f, 1.0f
+        ];
+        
         m_VertexArrayObject = m_Gl.GenVertexArray();
         m_Gl.BindVertexArray(m_VertexArrayObject);
 
         //Initializing a vertex buffer that holds the vertex data.
         m_VertexBufferObject = m_Gl.GenBuffer(); //Creating the buffer.
         m_Gl.BindBuffer(BufferTargetARB.ArrayBuffer, m_VertexBufferObject); //Binding the buffer.
-
-        fixed (float* buf = Vertices)
+        fixed (float* buf = vertices)
         {
-            m_Gl.BufferData(BufferTargetARB.ArrayBuffer, (nuint)(Vertices.Length * sizeof(float)), buf, BufferUsageARB.StaticDraw);
+            m_Gl.BufferData(BufferTargetARB.ArrayBuffer, (nuint)(vertices.Length * sizeof(float)), buf, BufferUsageARB.StaticDraw);
         }
 
         //Initializing an element buffer that holds the index data.
+        uint[] indices =
+        [
+            0u, 1u, 3u,
+            1u, 2u, 3u
+        ];
+        
         m_ElementBufferObject = m_Gl.GenBuffer(); //Creating the buffer.
         m_Gl.BindBuffer(BufferTargetARB.ElementArrayBuffer, m_ElementBufferObject); //Binding the buffer.
-        fixed (uint* buf = Indices)
+        fixed (uint* buf = indices)
         {
-            m_Gl.BufferData(BufferTargetARB.ElementArrayBuffer, (nuint)(Indices.Length * sizeof(uint)), buf, BufferUsageARB.StaticDraw);
+            m_Gl.BufferData(BufferTargetARB.ElementArrayBuffer, (nuint)(indices.Length * sizeof(uint)), buf, BufferUsageARB.StaticDraw);
         }
 
         //Creating a vertex shader.
@@ -94,10 +94,14 @@ internal class Program
         #version 330 core
 
         layout (location = 0) in vec3 aPosition;
+        layout (location = 1) in vec2 aTextureCoord;
+        
+        out vec2 frag_texCoords;
 
         void main()
         {
             gl_Position = vec4(aPosition, 1.0);
+            frag_texCoords = aTextureCoord;
         }
         """;
 
@@ -113,12 +117,16 @@ internal class Program
         const string fragmentCode = 
         """
         #version 330 core
+        
+        in vec2 frag_texCoords;
 
         out vec4 out_color;
+        
+        uniform sampler2D uTexture;
 
         void main()
         {
-            out_color = vec4(1.0, 0.5, 0.2, 1.0);
+            out_color = texture(uTexture, frag_texCoords);
         }
         """;
         
@@ -147,9 +155,67 @@ internal class Program
         m_Gl.DeleteShader(fragmentShader);
 
         //Tell opengl how to give the data to the shaders.
+        const uint stride = (3 * sizeof(float)) + (2 * sizeof(float));
+        
+        // Enable the "aPosition" attribute in our vertex array, providing its size and stride too.
         const uint positionLoc = 0;
         m_Gl.EnableVertexAttribArray(positionLoc);
-        m_Gl.VertexAttribPointer(positionLoc, 3, VertexAttribPointerType.Float, false, 3 * sizeof(float), (void*)0);
+        m_Gl.VertexAttribPointer(positionLoc, 3, VertexAttribPointerType.Float, false, stride, (void*) 0);
+        
+        // Now we need to enable our texture coordinates! We've defined that as location 1 so that's what we'll use
+        // here. The code is very similar to above, but you must make sure you set its offset to the **size in bytes**
+        // of the attribute before.
+        const uint textureLoc = 1;
+        m_Gl.EnableVertexAttribArray(textureLoc);
+        m_Gl.VertexAttribPointer(textureLoc, 2, VertexAttribPointerType.Float, false, stride, (void*) (3 * sizeof(float)));
+        
+        // Unbind everything as we don't need it.
+        m_Gl.BindVertexArray(0);
+        m_Gl.BindBuffer(BufferTargetARB.ArrayBuffer, 0);
+        m_Gl.BindBuffer(BufferTargetARB.ElementArrayBuffer, 0);
+        
+        // Now we create our texture!
+        m_Texture = m_Gl.GenTexture();
+        m_Gl.ActiveTexture(TextureUnit.Texture0);
+        m_Gl.BindTexture(TextureTarget.Texture2D, m_Texture);
+        
+        var imageResult = ImageResult.FromMemory(File.ReadAllBytes("silk.png"), ColorComponents.RedGreenBlueAlpha);
+        
+        fixed (byte* ptr = imageResult.Data)
+        {
+            // Upload our texture data to the GPU.
+            // Let's go over each parameter used here:
+            // 1. Tell OpenGL that we want to upload to the texture bound in the Texture2D target.
+            // 2. We are uploading the "base" texture level, therefore, this value should be 0. You don't need to
+            //    worry about texture levels for now.
+            // 3. We tell OpenGL that we want the GPU to store this data as RGBA formatted data on the GPU itself.
+            // 4. The image's width.
+            // 5. The image's height.
+            // 6. This is the image's border. This value MUST be 0. It is a leftover component from legacy OpenGL, and
+            //    it serves no purpose.
+            // 7. Our image data is formatted as RGBA data, therefore, we must tell OpenGL we are uploading RGBA data.
+            // 8. StbImageSharp returns this data as a byte[] array, therefore, we must tell OpenGL we are uploading
+            //    data in the unsigned byte format.
+            // 9. The actual pointer to our data!
+            m_Gl.TexImage2D(TextureTarget.Texture2D, 0, InternalFormat.Rgba, (uint)imageResult.Width, (uint)imageResult.Height, 0, PixelFormat.Rgba, PixelType.UnsignedByte, ptr);
+        }
+        
+        m_Gl.TextureParameter(m_Program, TextureParameterName.TextureWrapS, (int) TextureWrapMode.Repeat);
+        m_Gl.TextureParameter(m_Program, TextureParameterName.TextureWrapT, (int) TextureWrapMode.Repeat);
+        
+        m_Gl.TextureParameter(m_Program, TextureParameterName.TextureMinFilter, (int) TextureMinFilter.LinearMipmapLinear);
+        m_Gl.TextureParameter(m_Program, TextureParameterName.TextureMagFilter, (int) TextureMagFilter.Linear);
+        
+        m_Gl.GenerateMipmap(TextureTarget.Texture2D);
+        
+        // Unbind the texture as we no longer need to update it any further.
+        m_Gl.BindTexture(TextureTarget.Texture2D, 0);
+        
+        var location = m_Gl.GetUniformLocation(m_Program, "uTexture");
+        m_Gl.Uniform1(location, 0);
+        
+        m_Gl.Enable(EnableCap.Blend);
+        m_Gl.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
     }
 
     private static unsafe void OnRender(double deltaTime)
@@ -159,15 +225,15 @@ internal class Program
 
         m_Gl.BindVertexArray(m_VertexArrayObject);
         m_Gl.UseProgram(m_Program);
+        
+        m_Gl.ActiveTexture(TextureUnit.Texture0);
+        m_Gl.BindTexture(TextureTarget.Texture2D, m_Texture);
 
         //Draw the geometry.
-        m_Gl.DrawElements(PrimitiveType.Triangles, (uint)Indices.Length, DrawElementsType.UnsignedInt, (void*)0);
+        m_Gl.DrawElements(PrimitiveType.Triangles, 6, DrawElementsType.UnsignedInt, (void*)0);
     }
 
-    private static void OnUpdate(double deltaTime)
-    {
-       
-    }
+    private static void OnUpdate(double deltaTime) { }
 
     private static void OnFramebufferResize(Vector2D<int> newSize)
     {
@@ -181,6 +247,7 @@ internal class Program
         m_Gl.DeleteBuffer(m_ElementBufferObject);
         m_Gl.DeleteVertexArray(m_VertexArrayObject);
         m_Gl.DeleteProgram(m_Program);
+        m_Gl.DeleteTexture(m_Texture);
     }
 
     private static void KeyDown(IKeyboard keyboard, Key key, int keyCode)

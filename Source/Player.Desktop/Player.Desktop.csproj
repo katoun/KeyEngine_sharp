@@ -27,11 +27,21 @@
 	  <PackageReference Include="Silk.NET.Input" Version="2.22.0" />
 	  <PackageReference Include="Silk.NET.OpenGL" Version="2.22.0" />
 	  <PackageReference Include="Silk.NET.Windowing" Version="2.22.0" />
+	  <PackageReference Include="StbImageSharp" Version="2.30.15" />
 	  <PackageReference Include="System.Text.Json" Version="9.0.5" />
 	</ItemGroup>
 	
 	<ItemGroup>
 		<ProjectReference Include="..\KeyEngine\KeyEngine.csproj" />
+	</ItemGroup>
+	
+	<ItemGroup>
+	  <None Update="Resources\silk.png">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="silk.png">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
 	</ItemGroup>
 
 </Project>
