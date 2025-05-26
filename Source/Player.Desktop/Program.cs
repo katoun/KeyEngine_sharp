@@ -18,28 +18,6 @@ internal class Program
     
     private static uint m_Program;
 
-    //Vertex shaders are run on each vertex.
-    private const string VertexShaderSource = @"
-    #version 330 core
-
-    layout (location = 0) in vec3 aPosition;
-
-    void main()
-    {
-        gl_Position = vec4(aPosition, 1.0);
-    }";
-
-    //Fragment shaders are run on each fragment/pixel of the geometry.
-    private const string FragmentShaderSource = @"
-    #version 330 core
-
-    out vec4 out_color;
-
-    void main()
-    {
-        out_color = vec4(1.0, 0.5, 0.2, 1.0);
-    }";
-
     //Vertex data, uploaded to the VBO.
     private static readonly float[] Vertices =
     [
@@ -111,8 +89,20 @@ internal class Program
         }
 
         //Creating a vertex shader.
+        const string vertexCode = 
+        """
+        #version 330 core
+
+        layout (location = 0) in vec3 aPosition;
+
+        void main()
+        {
+            gl_Position = vec4(aPosition, 1.0);
+        }
+        """;
+
         var vertexShader = m_Gl.CreateShader(ShaderType.VertexShader);
-        m_Gl.ShaderSource(vertexShader, VertexShaderSource);
+        m_Gl.ShaderSource(vertexShader, vertexCode);
         m_Gl.CompileShader(vertexShader);
 
         //Checking the shader for compilation errors.
@@ -120,8 +110,20 @@ internal class Program
         if (vStatus != (int)GLEnum.True) Console.WriteLine($"Error compiling vertex shader {m_Gl.GetShaderInfoLog(vertexShader)}");
 
         //Creating a fragment shader.
+        const string fragmentCode = 
+        """
+        #version 330 core
+
+        out vec4 out_color;
+
+        void main()
+        {
+            out_color = vec4(1.0, 0.5, 0.2, 1.0);
+        }
+        """;
+        
         var fragmentShader = m_Gl.CreateShader(ShaderType.FragmentShader);
-        m_Gl.ShaderSource(fragmentShader, FragmentShaderSource);
+        m_Gl.ShaderSource(fragmentShader, fragmentCode);
         m_Gl.CompileShader(fragmentShader);
 
         //Checking the shader for compilation errors.
