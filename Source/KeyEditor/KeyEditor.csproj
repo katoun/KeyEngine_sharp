@@ -30,15 +30,15 @@
 
 	<ItemGroup>
 	<PackageReference Include="Avalonia" Version="11.3.0" />
-	<PackageReference Include="Avalonia.Controls.ProportionalStackPanel" Version="11.3.0.1" />
-	<PackageReference Include="Avalonia.Controls.Recycling" Version="11.3.0.1" />
-	<PackageReference Include="Avalonia.Controls.Recycling.Model" Version="11.3.0.1" />
 	<PackageReference Include="Avalonia.Desktop" Version="11.3.0" />
 	<PackageReference Include="Avalonia.Diagnostics" Version="11.3.0" Condition="'$(Configuration)' == 'Debug'" />
 	<PackageReference Include="Avalonia.Fonts.Inter" Version="11.3.0" />
-	<PackageReference Include="Avalonia.MarkupExtension" Version="11.3.0.1" />
 	<PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.0" />
 	<PackageReference Include="Dock.Avalonia" Version="11.3.0.2" />
+	<PackageReference Include="Dock.Controls.ProportionalStackPanel" Version="11.3.0.2" />
+	<PackageReference Include="Dock.Controls.Recycling" Version="11.3.0.2" />
+	<PackageReference Include="Dock.Controls.Recycling.Model" Version="11.3.0.2" />
+	<PackageReference Include="Dock.MarkupExtension" Version="11.3.0.2" />
 	<PackageReference Include="Dock.Model" Version="11.3.0.2" />
 	<PackageReference Include="Dock.Model.Mvvm" Version="11.3.0.2" />
 	<PackageReference Include="Dock.Serializer" Version="11.3.0.2" />
