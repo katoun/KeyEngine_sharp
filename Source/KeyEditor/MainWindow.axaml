@@ -3,23 +3,52 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:dock="clr-namespace:Dock.Avalonia.Controls;assembly=Dock.Avalonia"
-        xmlns:vm="using:KeyEditor.ViewModels"
+        xmlns:local="clr-namespace:KeyEditor"
         x:Class="KeyEditor.MainWindow"
-        x:DataType="vm:MainViewModel" x:CompileBindings="True"
+        x:Name="MainWindowView"
+        x:CompileBindings="True"
         mc:Ignorable="d"
         d:DesignWidth="1000" d:DesignHeight="800"
         Width="1000" Height="800"
-        Title="Editor">
-    <DockPanel>
-        <Menu DockPanel.Dock="Top">
-            <MenuItem Header="_File">
-                <MenuItem Header="Open" />
-            </MenuItem>
-            <MenuItem Header="_Help">
-                <MenuItem Header="About" />
-            </MenuItem>
-        </Menu>
-        <dock:DockControl DataContext="{Binding Layout}" />
-    </DockPanel>
+        Title="Editor"
+        UseLayoutRounding="True" RenderOptions.BitmapInterpolationMode="HighQuality"
+        WindowState="Normal" WindowStartupLocation="CenterScreen"
+        Background="{x:Null}"
+        TransparencyLevelHint="AcrylicBlur"
+        Foreground="{DynamicResource DockThemeForegroundBrush}"
+        BorderThickness="1" BorderBrush="{DynamicResource DockThemeBorderLowBrush}"
+        ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaChromeHints="PreferSystemChrome">
+    <Window.Resources>
+        <ExperimentalAcrylicMaterial BackgroundSource="Digger"
+                                     TintColor="{DynamicResource SystemAltHighColor}"
+                                     TintOpacity="1"
+                                     FallbackColor="{DynamicResource AcrylicFallbackColor}"
+                                     MaterialOpacity="0.55"
+                                     x:Key="AcrylicMaterial"/>
+    </Window.Resources>
+    
+    <Panel>
+        <ExperimentalAcrylicBorder IsHitTestVisible="False" Material="{StaticResource AcrylicMaterial}" />
+        <Panel Margin="{Binding #MainWindowView.OffScreenMargin}">
+            <Panel Margin="{Binding #MainWindowView.WindowDecorationMargin}">
+                <local:MainView>
+                    <local:MainView.Styles>
+                        <Style Selector="GridSplitter">
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate>
+                                        <Border Background="Transparent">
+                                            <ExperimentalAcrylicBorder Material="{StaticResource AcrylicMaterial}" />
+                                        </Border>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </local:MainView.Styles>
+                </local:MainView>
+            </Panel>
+        </Panel>
+    </Panel>
     
 </Window>
