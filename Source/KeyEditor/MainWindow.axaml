@@ -2,8 +2,24 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        xmlns:dock="clr-namespace:Dock.Avalonia.Controls;assembly=Dock.Avalonia"
+        xmlns:vm="using:KeyEditor.ViewModels"
         x:Class="KeyEditor.MainWindow"
+        x:DataType="vm:MainViewModel" x:CompileBindings="True"
+        mc:Ignorable="d"
+        d:DesignWidth="1000" d:DesignHeight="800"
+        Width="1000" Height="800"
         Title="Editor">
-    Welcome to Avalonia!
+    <DockPanel>
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="_File">
+                <MenuItem Header="Open" />
+            </MenuItem>
+            <MenuItem Header="_Help">
+                <MenuItem Header="About" />
+            </MenuItem>
+        </Menu>
+        <dock:DockControl DataContext="{Binding Layout}" />
+    </DockPanel>
+    
 </Window>
