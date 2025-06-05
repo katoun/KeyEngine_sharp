@@ -1,10 +1,12 @@
-﻿using System;
-using System.Drawing;
+﻿using Friflo.Json.Fliox.Utils;
 using Silk.NET.Input;
 using Silk.NET.Maths;
 using Silk.NET.OpenGL;
 using Silk.NET.Windowing;
 using StbImageSharp;
+using System;
+using System.Drawing;
+using System.Runtime.InteropServices;
 
 namespace KeyEngine.Player.Desktop;
 
@@ -39,7 +41,7 @@ internal class Program
         m_Window.Dispose();
     }
 
-    private static unsafe void OnLoad()
+    private static void OnLoad()
     {
         var input = m_Window.CreateInput();
         for (int i = 0; i < input.Keyboards.Count; i++)
@@ -53,7 +55,7 @@ internal class Program
         m_Gl.ClearColor(Color.CornflowerBlue);
 
         //Creating a vertex array.
-        float[] vertices =
+        Span<float> vertices =
         [
             //       aPosition | aTexCoords
             //X    Y      Z    | U, V
@@ -69,13 +71,11 @@ internal class Program
         //Initializing a vertex buffer that holds the vertex data.
         m_VertexBufferObject = m_Gl.GenBuffer(); //Creating the buffer.
         m_Gl.BindBuffer(BufferTargetARB.ArrayBuffer, m_VertexBufferObject); //Binding the buffer.
-        fixed (float* buf = vertices)
-        {
-            m_Gl.BufferData(BufferTargetARB.ArrayBuffer, (nuint)(vertices.Length * sizeof(float)), buf, BufferUsageARB.StaticDraw);
-        }
+        ReadOnlySpan<byte> vertexBytes = MemoryMarshal.AsBytes(vertices);
+        m_Gl.BufferData(BufferTargetARB.ArrayBuffer, (nuint)vertexBytes.Length, vertexBytes, BufferUsageARB.StaticDraw);
 
         //Initializing an element buffer that holds the index data.
-        uint[] indices =
+        Span<uint> indices =
         [
             0u, 1u, 3u,
             1u, 2u, 3u
@@ -83,10 +83,8 @@ internal class Program
         
         m_ElementBufferObject = m_Gl.GenBuffer(); //Creating the buffer.
         m_Gl.BindBuffer(BufferTargetARB.ElementArrayBuffer, m_ElementBufferObject); //Binding the buffer.
-        fixed (uint* buf = indices)
-        {
-            m_Gl.BufferData(BufferTargetARB.ElementArrayBuffer, (nuint)(indices.Length * sizeof(uint)), buf, BufferUsageARB.StaticDraw);
-        }
+        ReadOnlySpan<byte> indexBytes = MemoryMarshal.AsBytes(indices);
+        m_Gl.BufferData(BufferTargetARB.ElementArrayBuffer, (nuint)indexBytes.Length, indexBytes, BufferUsageARB.StaticDraw);
 
         //Creating a vertex shader.
         const string vertexCode = 
@@ -160,14 +158,14 @@ internal class Program
         // Enable the "aPosition" attribute in our vertex array, providing its size and stride too.
         const uint positionLoc = 0;
         m_Gl.EnableVertexAttribArray(positionLoc);
-        m_Gl.VertexAttribPointer(positionLoc, 3, VertexAttribPointerType.Float, false, stride, (void*) 0);
+        m_Gl.VertexAttribPointer(positionLoc, 3, VertexAttribPointerType.Float, false, stride, 0);
         
         // Now we need to enable our texture coordinates! We've defined that as location 1 so that's what we'll use
         // here. The code is very similar to above, but you must make sure you set its offset to the **size in bytes**
         // of the attribute before.
         const uint textureLoc = 1;
         m_Gl.EnableVertexAttribArray(textureLoc);
-        m_Gl.VertexAttribPointer(textureLoc, 2, VertexAttribPointerType.Float, false, stride, (void*) (3 * sizeof(float)));
+        m_Gl.VertexAttribPointer(textureLoc, 2, VertexAttribPointerType.Float, false, stride, 3 * sizeof(float));
         
         // Unbind everything as we don't need it.
         m_Gl.BindVertexArray(0);
@@ -178,28 +176,27 @@ internal class Program
         m_Texture = m_Gl.GenTexture();
         m_Gl.ActiveTexture(TextureUnit.Texture0);
         m_Gl.BindTexture(TextureTarget.Texture2D, m_Texture);
-        
+
+
+        // Upload our texture data to the GPU.
+        // Let's go over each parameter used here:
+        // 1. Tell OpenGL that we want to upload to the texture bound in the Texture2D target.
+        // 2. We are uploading the "base" texture level, therefore, this value should be 0. You don't need to
+        //    worry about texture levels for now.
+        // 3. We tell OpenGL that we want the GPU to store this data as RGBA formatted data on the GPU itself.
+        // 4. The image's width.
+        // 5. The image's height.
+        // 6. This is the image's border. This value MUST be 0. It is a leftover component from legacy OpenGL, and
+        //    it serves no purpose.
+        // 7. Our image data is formatted as RGBA data, therefore, we must tell OpenGL we are uploading RGBA data.
+        // 8. StbImageSharp returns this data as a byte[] array, therefore, we must tell OpenGL we are uploading
+        //    data in the unsigned byte format.
+        // 9. The actual pointer to our data!
         var imageResult = ImageResult.FromMemory(File.ReadAllBytes("silk.png"), ColorComponents.RedGreenBlueAlpha);
-        
-        fixed (byte* ptr = imageResult.Data)
-        {
-            // Upload our texture data to the GPU.
-            // Let's go over each parameter used here:
-            // 1. Tell OpenGL that we want to upload to the texture bound in the Texture2D target.
-            // 2. We are uploading the "base" texture level, therefore, this value should be 0. You don't need to
-            //    worry about texture levels for now.
-            // 3. We tell OpenGL that we want the GPU to store this data as RGBA formatted data on the GPU itself.
-            // 4. The image's width.
-            // 5. The image's height.
-            // 6. This is the image's border. This value MUST be 0. It is a leftover component from legacy OpenGL, and
-            //    it serves no purpose.
-            // 7. Our image data is formatted as RGBA data, therefore, we must tell OpenGL we are uploading RGBA data.
-            // 8. StbImageSharp returns this data as a byte[] array, therefore, we must tell OpenGL we are uploading
-            //    data in the unsigned byte format.
-            // 9. The actual pointer to our data!
-            m_Gl.TexImage2D(TextureTarget.Texture2D, 0, InternalFormat.Rgba, (uint)imageResult.Width, (uint)imageResult.Height, 0, PixelFormat.Rgba, PixelType.UnsignedByte, ptr);
-        }
-        
+
+        ReadOnlySpan<byte> imageData = imageResult.Data.AsSpan();
+        m_Gl.TexImage2D(TextureTarget.Texture2D, 0, InternalFormat.Rgba, (uint)imageResult.Width, (uint)imageResult.Height, 0, PixelFormat.Rgba, PixelType.UnsignedByte, imageData);
+
         m_Gl.TextureParameter(m_Program, TextureParameterName.TextureWrapS, (int) TextureWrapMode.Repeat);
         m_Gl.TextureParameter(m_Program, TextureParameterName.TextureWrapT, (int) TextureWrapMode.Repeat);
         
@@ -216,6 +213,8 @@ internal class Program
         
         m_Gl.Enable(EnableCap.Blend);
         m_Gl.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
+
+        m_Gl.DrawElements(PrimitiveType.Triangles, 6, DrawElementsType.UnsignedInt, (nint)0);
     }
 
     private static unsafe void OnRender(double deltaTime)
@@ -230,7 +229,7 @@ internal class Program
         m_Gl.BindTexture(TextureTarget.Texture2D, m_Texture);
 
         //Draw the geometry.
-        m_Gl.DrawElements(PrimitiveType.Triangles, 6, DrawElementsType.UnsignedInt, (void*)0);
+        m_Gl.DrawElements(PrimitiveType.Triangles, 6, DrawElementsType.UnsignedInt, (void*)0);  
     }
 
     private static void OnUpdate(double deltaTime) { }
